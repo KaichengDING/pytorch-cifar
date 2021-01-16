@@ -15,6 +15,21 @@ from models import *
 from utils import progress_bar
 
 
+
+class AddGaussianNoise(object):
+  def __init__(self, mean=0.0, std=1.0):
+    self.std = std
+    self.mean = mean
+        
+  def __call__(self, tensor):
+    noise = torch.randn(tensor.size()) * self.std + self.mean
+    res = tensor + noise
+    return torch.clamp(input=res, min=0.0, max=1.0)
+    
+  def __repr__(self):
+    return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
+
+
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--resume', '-r', action='store_true',
@@ -31,12 +46,14 @@ transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    transforms.Normalize((0.5, 0.5, 0.5), (1.0, 1.0, 1.0)),
+    AddGaussianNoise(0.0, 0.1)
 ])
 
 transform_test = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    transforms.Normalize((0.5, 0.5, 0.5), (1.0, 1.0, 1.0)),
+    AddGaussianNoise(0.0, 0.1)
 ])
 
 trainset = torchvision.datasets.CIFAR10(
@@ -65,10 +82,10 @@ print('==> Building model..')
 # net = DPN92()
 # net = ShuffleNetG2()
 # net = SENet18()
-# net = ShuffleNetV2(1)
+net = ShuffleNetV2(1)
 # net = EfficientNetB0()
 # net = RegNetX_200MF()
-net = SimpleDLA()
+# net = SimpleDLA()
 net = net.to(device)
 if device == 'cuda':
     net = torch.nn.DataParallel(net)
